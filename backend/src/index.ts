@@ -113,6 +113,7 @@ async function saveMeetingData(data: any) {
   }
 
   // Create new meeting data
+  const now = new Date().toISOString();
   const { data: meetingData, error } = await supabase
     .from("MeetingData")
     .insert({
@@ -123,6 +124,7 @@ async function saveMeetingData(data: any) {
       completed: data.projectStats.completed,
       issues: data.projectStats.issues,
       codeReviewer: data.codeReviewer,
+      updatedAt: now,
     })
     .select()
     .single();
@@ -140,16 +142,19 @@ async function saveMeetingData(data: any) {
       name,
       status: "inProgress",
       meetingDataId: meetingId,
+      updatedAt: now,
     })),
     ...(data.projects.completed || []).map((name: string) => ({
       name,
       status: "completed",
       meetingDataId: meetingId,
+      updatedAt: now,
     })),
     ...(data.projects.issues || []).map((name: string) => ({
       name,
       status: "issues",
       meetingDataId: meetingId,
+      updatedAt: now,
     })),
   ];
 
@@ -167,6 +172,7 @@ async function saveMeetingData(data: any) {
     solutions: JSON.stringify(detail.วิธีแก้ปัญหา || []),
     notes: JSON.stringify(detail.หมายเหตุ || []),
     meetingDataId: meetingId,
+    updatedAt: now,
   }));
 
   if (projectDetails.length > 0) {
@@ -179,6 +185,7 @@ async function saveMeetingData(data: any) {
     description: issue.description,
     priority: issue.priority,
     meetingDataId: meetingId,
+    updatedAt: now,
   }));
 
   if (issuesDetails.length > 0) {
@@ -191,6 +198,7 @@ async function saveMeetingData(data: any) {
     description: review.description,
     priority: review.priority,
     meetingDataId: meetingId,
+    updatedAt: now,
   }));
 
   if (codeReviews.length > 0) {
