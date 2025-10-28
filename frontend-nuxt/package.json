@@ -1,0 +1,30 @@
+{
+  "name": "summarize-project-nuxt",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev --port 27802",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "backend:dev": "cd ../backend && bun run dev",
+    "backend:start": "cd ../backend && bun run start",
+    "backend:studio": "cd ../backend && bun run db:studio",
+    "backend:setup": "cd ../backend && bun run db:generate && bun run db:push",
+    "backend:seed": "cd ../backend && bun run db:seed"
+  },
+  "dependencies": {
+    "@pinia/nuxt": "^0.6.1",
+    "nuxt": "^3.19.2",
+    "pinia": "^2.2.6",
+    "vue": "^3.5.22",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@nuxt/devtools": "latest",
+    "@nuxt/typescript-build": "^3.0.2",
+    "@types/node": "^22.16.5",
+    "typescript": "~5.8.0"
+  }
+}

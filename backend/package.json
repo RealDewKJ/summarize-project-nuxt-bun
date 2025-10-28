@@ -1,0 +1,22 @@
+{
+    "name": "summarize-project-backend",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "bun --watch src/index.ts",
+        "start": "bun src/index.ts",
+        "db:generate": "prisma generate",
+        "db:push": "prisma db push",
+        "db:studio": "prisma studio",
+        "db:seed": "bun src/seed.ts"
+    },
+    "dependencies": {
+        "@prisma/client": "^6.3.0",
+        "cors": "^2.8.5",
+        "elysia": "^1.4.9"
+    },
+    "devDependencies": {
+        "@types/cors": "^2.8.17",
+        "prisma": "^6.3.0"
+    }
+}

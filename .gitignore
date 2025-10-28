@@ -1,30 +1,53 @@
-# Logs
-logs
+# Dependencies
+node_modules/
+bun.lock
+package-lock.json
+yarn.lock
+
+# Build outputs
+.nuxt/
+.output/
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.production
 *.log
+
+# Database
+*.db
+*.db-journal
+dev.db*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-.DS_Store
-dist
-dist-ssr
-coverage
-*.local
+# Prisma
+prisma/migrations/
 
-/cypress/videos/
-/cypress/screenshots/
+# Vercel
+.vercel
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Railway
+.railway
 
-*.tsbuildinfo
+# Temporary files
+*.tmp
+*.temp

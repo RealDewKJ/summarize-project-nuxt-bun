@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model MeetingData {
+  id             Int      @id @default(autoincrement())
+  title          String
+  date           String
+  total          Int
+  inProgress     Int
+  completed      Int
+  issues         Int
+  codeReviewer   String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  projectDetails  ProjectDetail[]
+  issuesDetails   IssueDetail[]
+  codeReviews     CodeReview[]
+  projects        Project[]
+}
+
+model Project {
+  id            Int          @id @default(autoincrement())
+  name          String
+  status        String       // "inProgress", "completed", "issues"
+  meetingDataId Int
+  meetingData   MeetingData  @relation(fields: [meetingDataId], references: [id], onDelete: Cascade)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model ProjectDetail {
+  id            Int          @id @default(autoincrement())
+  orderNum      Int
+  systemName    String
+  responsible   String
+  pm            String
+  problems      String       // JSON array as string
+  solutions     String       // JSON array as string
+  notes         String       // JSON array as string
+  meetingDataId Int
+  meetingData   MeetingData  @relation(fields: [meetingDataId], references: [id], onDelete: Cascade)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model IssueDetail {
+  id            Int          @id @default(autoincrement())
+  project       String
+  description   String
+  priority      String       // "low", "medium", "high"
+  meetingDataId Int
+  meetingData   MeetingData  @relation(fields: [meetingDataId], references: [id], onDelete: Cascade)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model CodeReview {
+  id            Int          @id @default(autoincrement())
+  project       String
+  description   String
+  priority      String       // "low", "medium", "high"
+  meetingDataId Int
+  meetingData   MeetingData  @relation(fields: [meetingDataId], references: [id], onDelete: Cascade)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
