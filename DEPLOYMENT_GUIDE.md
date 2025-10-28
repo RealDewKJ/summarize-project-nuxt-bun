@@ -1,190 +1,307 @@
-# 📖 คู่มือ Deploy Project บน Railway และ Vercel
+# 📖 คู่มือ Deploy Project ฟรีถาวร (ไม่มีหมดอายุ)
 
-## 🎯 สรุป
+## 🎯 ตัวเลือกที่แนะนำ
 
-- **Backend**: Railway.app (ฟรี $5/เดือน)
-- **Frontend**: Vercel (ฟรี)
-- **Database**: PostgreSQL บน Railway
+### ✅ อันดับ 1: Supabase + Render (แนะนำ!)
+
+- **Backend**: Render.com (ฟรีถาวร)
+- **Frontend**: Vercel (ฟรีถาวร)
+- **Database**: Supabase PostgreSQL (ฟรี 500MB)
+
+**ข้อดี**:
+
+- ✅ ฟรีถาวร ไม่มีหมดอายุ
+- ✅ Supabase มี Dashboard, API auto-generate, Real-time
+- ✅ PostgreSQL 500MB ฟรี
+- ✅ Auto-deploy จาก GitHub
+
+### ✅ อันดับ 2: Render ทั้งหมด (ง่ายที่สุด)
+
+- **Backend**: Render.com (ฟรีถาวร)
+- **Frontend**: Render Intelligence
+- **Database**: Render PostgreSQL (ฟรี 90 วัน, ต่ออายุได้)
+
+**ข้อดี**:
+
+- ✅ ฟรีถาวร
+- ✅ ใช้ Render ทั้งหมด (ง่าย)
+- ✅ PostgreSQL ฟรี 1GB
 
 ---
 
-## 🚀 ขั้นตอนที่ 1: Deploy Backend บน Railway
+## 🚀 Option 1: Deploy บน Supabase + Render
 
-### 1.1 เริ่มต้น
+### ขั้นตอนที่ 1: สร้าง Database บน Supabase
 
-1. ไปที่ [Railway.app](https://railway.app) และสมัครสมาชิก
-2. เลือก "New Project" → "Deploy from GitHub repo"
-3. เลือก repository ของคุณ และเลือก folder `backend`
+#### 1.1 สมัครและสร้าง Project
 
-### 1.2 สร้าง PostgreSQL Database
+1. ไปที่ [Supabase.com](https://supabase.com)
+2. Sign up/Sign in
+3. เลือก "New Project"
+4. ตั้งชื่อ project: `summarize-project`
+5. ตั้ง database password (บันทึกไว้)
+6. เลือก Region: `Southeast Asia (Singapore)`
+7. คลิก "Create new project"
 
-1. ใน Project ของคุณ เลือก "+ New" → "Database" → "Add PostgreSQL"
-2. Railway จะสร้าง PostgreSQL database ให้อัตโนมัติ
-3. คลิกที่ database แล้วไปที่ tab "Variables"
-4. คัดลอก `DATABASE_URL` (จะมี format อย่าง `postgresql://user:pass@host:port/db`)
+#### 1.2 เตรียม Database
 
-### 1.3 ตั้งค่า Environment Variables
+1. รอประมาณ 1-2 นาทีให้ project สร้างเสร็จ
+2. ไปที่ "Project Settings" → "Database"
+3. ดู "Connection string" → แถบ "URI"
+4. คัดลอก URL (มี format: `postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres`)
+5. **บันทึกไว้!**
 
-1. ไปที่ service ของ backend
-2. เลือก tab "Variables"
-3. เพิ่ม environment variables:
-   ```
-   PORT=27801
-   HOST=0.0.0.0
-   DATABASE_URL=<คัดลอกจาก PostgreSQL database>
-   ```
+#### 1.3 (Optional) Seed Database
 
-### 1.4 Deploy
+ถ้าต้องการ seed data:
 
-1. Railway จะเริ่ม build และ deploy อัตโนมัติ
-2. รอจนเสร็จ (ประมาณ 2-3 นาที)
-3. คลิก "Settings" → "Generate Domain" เพื่อสร้าง public URL
-4. **บันทึก URL นี้ไว้!** (เช่น: `https://your-backend.up.railway.app`)
+```bash
+# เปลี่ยน DATABASE_URL ใน .env ชั่วคราว
+cd backend
+# ตั้งค่าใน config.env ชั่วคราว
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@db.xxxxx.supabase.co:5432/postgres"
 
-### 1.5 ตรวจสอบการทำงาน
+# รัน migrations และ seed
+bun run db:push
+bun run db:seed
+```
 
-เปิด browser ไปที่ `https://your-backend.up.railway.app/health`
+### ขั้นตอนที่ 2: Deploy Backend บน Render
+
+#### 2.1 สร้าง Web Service
+
+1. ไปที่ [Render.com](https://render.com)
+2. Sign up/Sign in (ใช้ GitHub)
+3. เลือก "New" → "Web Service"
+4. เลือก repository ของคุณ
+5. ตั้งค่า:
+   - **Name**: `summarize-project-backend`
+   - **Environment**: `Node`
+   - **Region**: `Singapore`
+   - **Branch**: `main`
+   - **Root Directory**: `backend`
+   - **Build Command**: `bun install && bun run db:generate`
+   - **Start Command**: `bun run start`
+
+#### 2.2 ตั้งค่า Environment Variables
+
+ใน Render Dashboard:
+
+- คลิกที่ service → ไปที่ "Environment"
+- เพิ่ม variables:
+  ```
+  PORT=27801
+  HOST=0.0.0.0
+  NODE_ENV=production
+  DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@db.xxxxx.supabase.co:5432/postgres
+  ```
+
+#### 2.3 Deploy
+
+1. Render จะเริ่ม build และ deploy อัตโนมัติ
+2. รอประมาณ 3-5 นาที
+3. คลิกที่ service → ดู "Public URL" (เช่น: `https://summarize-project-backend.onrender.com`)
+4. **บันทึก URL นี้ไว้!**
+
+#### 2.4 ตรวจสอบ
+
+เปิด: `https://your-backend.onrender.com/health`
 ควรเห็น:
 
 ```json
 { "status": "ok", "timestamp": "..." }
 ```
 
----
+### ขั้นตอนที่ 3: Deploy Frontend บน Vercel
 
-## 🌐 ขั้นตอนที่ 2: Deploy Frontend บน Vercel
+#### 3.1 สร้าง Project
 
-### 2.1 เริ่มต้น
+1. ไปที่ [Vercel.com](https://vercel.com)
+2. Sign up/Sign in
+3. เลือก "Add New Project"
+4. Import จาก GitHub repository
+5. ตั้งค่า:
+   - **Framework Preset**: Nuxt.js
+   - **Root Directory**: `frontend-nuxt`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `.output/public`
 
-1. ไปที่ [Vercel](https://vercel.com) และสมัครสมาชิก
-2. เลือก "Add New..." → "Project" → "Import Git Repository"
-3. เลือก repository ของคุณ
+#### 3.2 ตั้งค่า Environment Variable
 
-### 2.2 ตั้งค่า Project
+ก่อนคลิก "Deploy":
 
-- **Framework Preset**: Nuxt.js
-- **Root Directory**: `frontend-nuxt`
-- **Build Command**: `npm run build` (default)
-- **Output Directory**: `.output/public` (default)
+- **Variable**: `NUXT_PUBLIC_API_URL`
+- **Value**: `https://your-backend.onrender.com` (URL จาก Render)
 
-### 2.3 ตั้งค่า Environment Variables
-
-ก่อนคลิก "Deploy" ให้เพิ่ม environment variable:
-
-- **Key**: `NUXT_PUBLIC_API_URL`
-- **Value**: `https://your-backend.up.railway.app` (URL จาก Railway)
-
-### 2.4 Deploy
+#### 3.3 Deploy
 
 1. คลิก "Deploy"
-2. รอจนเสร็จ (ประมาณ 1-2 นาที)
+2. รอประมาณ 1-2 นาที
 3. Vercel จะให้ URL (เช่น: `https://your-app.vercel.app`)
-
-### 2.5 ตรวจสอบการทำงาน
-
-1. เปิด browser ไปที่ URL ของ Vercel
-2. เปิด Developer Tools (F12) → Console
-3. ตรวจสอบว่า API calls ไปที่ backend URL ถูกต้อง
 
 ---
 
-## 🔧 ขั้นตอนที่ 3: Setup Database (Seed Data - Optional)
+## 🚀 Option 2: Deploy ทั้งหมดบน Render (ง่ายที่สุด)
 
-หากต้องการ seed data เข้าไปใน database:
+### ขั้นตอนที่ 1: สร้าง PostgreSQL Database บน Render
 
-### วิธีการที่ 1: ผ่าน Prisma Studio (ท้องถิ่น)
+1. ไปที่ [Render.com](https://render.com)
+2. เลือก "New" → "PostgreSQL"
+3. ตั้งค่า:
+   - **Name**: `summarize-project-db`
+   - **Database**: `summarize_project`
+   - **User**: `summarize_user`
+   - **Region**: `Singapore`
+   - **Plan**: Free
+4. คลิก "Create Database"
+5. รอสักครู่
+6. ไปที่ Database → "Connections" → คัดลอก "Internal Database URL"
+7. **บันทึกไว้!**
 
-1. เปลี่ยน `DATABASE_URL` ใน `.env` เป็น PostgreSQL URL จาก Railway
-2. รันคำสั่ง:
-   ```bash
-   cd backend
-   bun run db:push
-   bun run db:seed
+### ขั้นตอนที่ 2: Deploy Backend
+
+1. ไปที่ "New" → "Web Service"
+2. เลือก repository
+3. ตั้งค่าเหมือน Option 1 ข้อ 2.1
+4. Environment Variables:
    ```
+   PORT=27801
+   HOST=0.0.0.0
+   NODE_ENV=production
+   DATABASE_URL=<Internal Database URL จาก Render>
+   ```
+5. Deploy
 
-### วิธีการที่ 2: ผ่าน Railway Database
+### ขั้นตอนที่ 3: Deploy Frontend
 
-1. ไปที่ Railway → PostgreSQL database
-2. คลิก "Query" → "Data"
-3. ใช้ Railway's built-in SQL editor
+1. ไปที่ "New" → "Static Site"
+2. เลือก repository
+3. ตั้งค่า:
+   - **Name**: `summarize-project-frontend`
+   - **Root Directory**: `frontend-nuxt`
+   - **Build Command**: `npm run build`
+   - **Publish Directory**: `frontend-nuxt/.output/public`
+4. Environment Variable:
+   ```
+   NUXT_PUBLIC_API_URL=https://your-backend.onrender.com
+   ```
+5. Deploy
 
 ---
 
 ## 📝 สรุป Environment Variables
 
-### Backend (Railway)
+### Backend (Render)
 
 ```
 PORT=27801
 HOST=0.0.0.0
-DATABASE_URL=postgresql://user:pass@host:port/db
+NODE_ENV=production
+DATABASE_URL=postgresql://postgres:pass@host:port/db
 ```
 
 ### Frontend (Vercel)
 
 ```
-NUXT_PUBLIC_API_URL=https://your-backend.up.railway.app
+NUXT_PUBLIC_API_URL=https://your-backend.onrender.com
 ```
+
+---
+
+## 🔑 Supabase Dashboard Features
+
+Supabase มีฟีเจอร์ดีๆ:
+
+- 📊 **Table Editor**: จัดการข้อมูลในตาราง
+- 🔍 **SQL Editor**: รัน SQL queries
+- 📡 **API Docs**: auto-generate API documentation
+- 🔐 **Authentication**: user management (optional)
+- 📈 **Metrics**: ดูสถิติการใช้งาน
+
+เข้าใช้งาน:
+
+1. ไปที่ [Supabase Dashboard](https://app.supabase.com)
+2. เลือก project ของคุณ
+3. ใช้ "Table Editor" เพื่อดู/แก้ไขข้อมูล
 
 ---
 
 ## 🐛 Troubleshooting
 
-### Backend ไม่ทำงาน
+### Backend ไม่ connect Database
 
-- ตรวจสอบ logs ใน Railway → "Deployments"
-- ตรวจสอบว่า `DATABASE_URL` ถูกต้อง
-- ตรวจสอบว่า Prisma generate ทำงาน: `bun run db:generate`
+- ตรวจสอบ `DATABASE_URL` ใน Render
+- ลองใช้ Connection Pooler URL จาก Supabase (port 6543 แทน 5432)
+- ตรวจสอบ password ถูกต้อง
 
-### Frontend ไม่เชื่อมต่อ Backend
+### Render Free Plan - Sleeping Service
+
+- **ฟรี plan**: service จะ sleep หลังไม่ใช้งาน 15 นาที
+- แก้ไข: upgrade to paid หรือใช้ Supabase (ไม่มี sleep)
+- ทางเลือก: ใช้ Render PostgreSQL + Cron job เพื่อปัด service
+
+### Frontend เชื่อมต่อไม่ได้
 
 - ตรวจสอบ `NUXT_PUBLIC_API_URL` ใน Vercel
-- เปิด Network tab ใน browser เพื่อดู API calls
-- ตรวจสอบ CORS settings ใน backend
+- ตรวจสอบ CORS ใน backend
+- ดู console ใน browser (F12)
 
-### Database Issues
+### Database ไม่มีข้อมูล
 
-- ตรวจสอบว่า `DATABASE_URL` format ถูกต้อง
-- ลองรัน migration: `bun run db:push`
-- ตรวจสอบ connection string ใน Railway database
-
----
-
-## 📚 ไฟล์ที่สำคัญ
-
-### Backend
-
-- `backend/prisma/schema.prisma` - Database schema (PostgreSQL)
-- `backend/railway.json` - Railway configuration
-- `backend/nixpacks.toml` - Build configuration
-- `backend/config.env` - Local development config
-
-### Frontend
-
-- `frontend-nuxt/nuxt.config.ts` - Nuxt configuration
-- `frontend-nuxt/vercel.json` - Vercel configuration
-- `frontend-nuxt/config.env` - Local development config
+```bash
+# Connect to Supabase Database
+cd backend
+# อัพเดต config.env ชั่วคราว
+bun run db:push
+bun run db:seed
+```
 
 ---
 
-## ✅ Checklist ก่อน Deploy
+## ✅ Checklist
 
-- [ ] แก้ไข `prisma/schema.prisma` เป็น PostgreSQL
-- [ ] สร้าง PostgreSQL database บน Railway
-- [ ] ตั้งค่า `DATABASE_URL` ใน Railway
-- [ ] Deploy backend สำเร็จ
-- [ ] ตรวจสอบ `/health` endpoint ทำงาน
-- [ ] ตั้งค่า `NUXT_PUBLIC_API_URL` ใน Vercel
-- [ ] Deploy frontend สำเร็จ
-- [ ] ตรวจสอบ frontend เชื่อมต่อ backend ได้
+### Supabase + Render
+
+- [ ] สร้าง Supabase project
+- [ ] คัดล่าย DATABASE_URL
+- [ ] Deploy backend บน Render
+- [ ] ตั้งค่า DATABASE_URL ใน Render
+- [ ] ตรวจสอบ backend ทำงาน
+- [ ] Deploy frontend บน Vercel
+- [ ] ตั้งค่า NUXT_PUBLIC_API_URL
+- [ ] ตรวจสอบ frontend ทำงาน
 
 ---
 
 ## 🎉 เสร็จแล้ว!
 
-ตอนนี้คุณมี application ที่ deploy บน:
+**URLs ของคุณ:**
 
-- Backend: `https://your-backend.up.railway.app`
+- Backend: `https://your-backend.onrender.com`
 - Frontend: `https://your-app.vercel.app`
+- Database: [Supabase Dashboard](https://app.supabase.com)
 
-ทุกครั้งที่ push code ใหม่ไปที่ GitHub, Railway และ Vercel จะ auto-deploy ให้อัตโนมัติ! 🚀
+**ฟรีถาวร ไม่มีหมดอายุ!** 🚀
+
+---
+
+## 📚 ตัวเลือกอื่น (ถ้าต้องการ)
+
+### Fly.io
+
+- **URL**: [fly.io](https://fly.io)
+- **ฟรี**: 3 shared-cpu VMs
+- **Database**: PostgreSQL (ฟรี 3GB)
+- **ใช้**: dockerfile
+
+### DigitalOcean App Platform
+
+- **URL**: [digitalocean.com](https://digitalocean.com)
+- **ฟรี**: $200 credit (2 เดือน)
+- **Database**: Managed PostgreSQL
+
+### Railway (เดิม)
+
+- **URL**: [railway.app](https://railway.app)
+- **ฟรี**: $5/เดือน (30 วัน)
+- **แนะนำ**: ไม่ใช้ เพราะหมดอายุเร็ว

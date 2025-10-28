@@ -33,24 +33,28 @@ bun run dev
 - Frontend: http://localhost:27802
 - Backend API: http://localhost:27801
 
-## 🌐 Deploy ขึ้น Production
+## 🌐 Deploy ขึ้น Production (ฟรีถาวร)
 
-### Backend (Railway)
+### 1. Database (Supabase)
 
-1. ไปที่ [railway.app](https://railway.app)
-2. สร้าง project ใหม่ → deploy จาก GitHub
-3. เพิ่ม PostgreSQL database
-4. Set environment variables:
-   - `DATABASE_URL` (จาก PostgreSQL)
-   - `PORT=27801`
-   - `HOST=0.0.0.0`
+1. ไปที่ [supabase.com](https://supabase.com) → สร้าง project
+2. คัดลอก `DATABASE_URL`
 
-### Frontend (Vercel)
+### 2. Backend (Render)
+
+1. ไปที่ [render.com](https://render.com)
+2. New → Web Service → เลือก repository
+3. Root Directory: `backend`
+4. Build: `bun install && bun run db:generate`
+5. Start: `bun run start`
+6. Environment: `DATABASE_URL`, `PORT=27801`, `HOST=0.0.0.0`
+
+### 3. Frontend (Vercel)
 
 1. ไปที่ [vercel.com](https://vercel.com)
-2. Import project จาก GitHub
-3. Set root directory: `frontend-nuxt`
-4. Set environment variable:
-   - `NUXT_PUBLIC_API_URL=https://your-backend.up.railway.app`
+2. Import project → Set root: `frontend-nuxt`
+3. Environment: `NUXT_PUBLIC_API_URL=https://your-backend.onrender.com`
 
-**ดูรายละเอียดเพิ่มเติม**: [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
+**ดูรายละเอียดเต็ม**: [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
+
+**ฟรีถาวร ไม่มีหมดอายุ!** 🎉

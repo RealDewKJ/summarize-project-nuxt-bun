@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: summarize-project-backend
+    env: bun
+    buildCommand: bun install && bun run db:generate
+    startCommand: bun run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 27801
+      - key: HOST
+        value: 0.0.0.0
+      # Add DATABASE_URL in Render Dashboard under Environment
+
+databases:
+  - name: summarize-project-db
+    plan: free
+    databaseName: summarize_project
+    user: summarize_user

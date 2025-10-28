@@ -80,11 +80,13 @@ Frontend จะรันที่ `http://localhost:27802`
 
 ดูคู่มือทั้งหมดใน **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)**
 
-### สรุป:
+### สร 原來:
 
-- **Backend**: Deploy บน [Railway.app](https://railway.app)
-- **Frontend**: Deploy บน [Vercel](https://vercel.com)
-- **Database**: PostgreSQL บน Railway
+- **Database**: PostgreSQL บน [Supabase](https://supabase.com) - ฟรี 500MB
+- **Backend**: Deploy บน [Render.com](https://render.com) - ฟรีถาวร
+- **Frontend**: Deploy บน [Vercel](https://vercel.com) - ฟรีถาวร
+
+**ทั้งหมดฟรีถาวร ไม่มีหมดอายุ!** 🎉
 
 ## 📡 API Endpoints
 
