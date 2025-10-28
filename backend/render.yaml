@@ -2,7 +2,7 @@ services:
   - type: web
     name: summarize-project-backend
     env: bun
-    buildCommand: bun install && bun run db:generate
+    buildCommand: bun install
     startCommand: bun run start
     envVars:
       - key: NODE_ENV

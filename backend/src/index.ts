@@ -1,28 +1,50 @@
 import { Elysia } from "elysia";
-import { PrismaClient } from "@prisma/client";
+import { createClient } from "@supabase/supabase-js";
 
-const prisma = new PrismaClient();
+// Initialize Supabase client
+const supabaseUrl = process.env.SUPABASE_URL || "";
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || "";
+const supabase = createClient(supabaseUrl, supabaseKey);
+
 const PORT = process.env.PORT || 27801;
 const HOST = process.env.HOST || "0.0.0.0";
 
 // Get latest meeting data
 async function getMeetingData() {
-  const meetingData = await prisma.meetingData.findFirst({
-    orderBy: { updatedAt: "desc" },
-    include: {
-      projects: true,
-      projectDetails: true,
-      issuesDetails: true,
-      codeReviews: true,
-    },
-  });
+  const { data: meetingDataList, error: listError } = await supabase
+    .from("MeetingData")
+    .select("*")
+    .order("updatedAt", { ascending: false })
+    .limit(1);
 
-  if (!meetingData) {
+  if (listError || !meetingDataList || meetingDataList.length === 0) {
+    console.log("No meeting data found");
     return null;
   }
 
+  const meetingData = meetingDataList[0];
+  const meetingId = meetingData.id;
+
+  // Fetch related data in parallel
+  const [
+    projectsResult,
+    projectDetailsResult,
+    issuesResult,
+    codeReviewsResult,
+  ] = await Promise.all([
+    supabase.from("Project").select("*").eq("meetingDataId", meetingId),
+    supabase.from("ProjectDetail").select("*").eq("meetingDataId", meetingId),
+    supabase.from("IssueDetail").select("*").eq("meetingDataId", meetingId),
+    supabase.from("CodeReview").select("*").eq("meetingDataId", meetingId),
+  ]);
+
+  const projects = projectsResult.data || [];
+  const projectDetails = projectDetailsResult.data || [];
+  const issuesDetails = issuesResult.data || [];
+  const codeReviews = codeReviewsResult.data || [];
+
   // Transform to match frontend format
-  const projects = meetingData.projects.reduce(
+  const projectsByStatus = projects.reduce(
     (acc, project) => {
       if (!acc[project.status]) acc[project.status] = [];
       acc[project.status].push(project.name);
@@ -42,8 +64,8 @@ async function getMeetingData() {
       completed: meetingData.completed,
       issues: meetingData.issues,
     },
-    projects,
-    projectDetails: meetingData.projectDetails.map((detail) => ({
+    projects: projectsByStatus,
+    projectDetails: projectDetails.map((detail) => ({
       ลำดับ: detail.orderNum,
       ระบบงาน: detail.systemName,
       ผู้รับผิดชอบ: detail.responsible,
@@ -52,12 +74,12 @@ async function getMeetingData() {
       วิธีแก้ปัญหา: JSON.parse(detail.solutions),
       หมายเหตุ: JSON.parse(detail.notes),
     })),
-    issuesDetails: meetingData.issuesDetails.map((issue) => ({
+    issuesDetails: issuesDetails.map((issue) => ({
       project: issue.project,
       description: issue.description,
       priority: issue.priority,
     })),
-    codeReview: meetingData.codeReviews.map((review) => ({
+    codeReview: codeReviews.map((review) => ({
       project: review.project,
       description: review.description,
       priority: review.priority,
@@ -69,17 +91,31 @@ async function getMeetingData() {
 // Save/Update meeting data
 async function saveMeetingData(data: any) {
   // Delete old data (keeping only latest)
-  const oldData = await prisma.meetingData.findFirst({
-    orderBy: { updatedAt: "desc" },
-  });
+  const { data: oldDataList } = await supabase
+    .from("MeetingData")
+    .select("id")
+    .order("updatedAt", { ascending: false })
+    .limit(1);
 
-  if (oldData) {
-    await prisma.meetingData.delete({ where: { id: oldData.id } });
+  if (oldDataList && oldDataList.length > 0) {
+    const oldId = oldDataList[0].id;
+
+    // Delete related records
+    await Promise.all([
+      supabase.from("Project").delete().eq("meetingDataId", oldId),
+      supabase.from("ProjectDetail").delete().eq("meetingDataId", oldId),
+      supabase.from("IssueDetail").delete().eq("meetingDataId", oldId),
+      supabase.from("CodeReview").delete().eq("meetingDataId", oldId),
+    ]);
+
+    // Delete main record
+    await supabase.from("MeetingData").delete().eq("id", oldId);
   }
 
   // Create new meeting data
-  const meetingData = await prisma.meetingData.create({
-    data: {
+  const { data: meetingData, error } = await supabase
+    .from("MeetingData")
+    .insert({
       title: data.meetingInfo.title,
       date: data.meetingInfo.date,
       total: data.projectStats.total,
@@ -87,49 +123,79 @@ async function saveMeetingData(data: any) {
       completed: data.projectStats.completed,
       issues: data.projectStats.issues,
       codeReviewer: data.codeReviewer,
-      projects: {
-        create: [
-          ...(data.projects.inProgress || []).map((name: string) => ({
-            name,
-            status: "inProgress",
-          })),
-          ...(data.projects.completed || []).map((name: string) => ({
-            name,
-            status: "completed",
-          })),
-          ...(data.projects.issues || []).map((name: string) => ({
-            name,
-            status: "issues",
-          })),
-        ],
-      },
-      projectDetails: {
-        create: (data.projectDetails || []).map((detail: any) => ({
-          orderNum: parseInt(detail.ลำดับ) || 0,
-          systemName: detail.ระบบงาน,
-          responsible: detail.ผู้รับผิดชอบ,
-          pm: detail.PM,
-          problems: JSON.stringify(detail.ปัญหาที่พบ || []),
-          solutions: JSON.stringify(detail.วิธีแก้ปัญหา || []),
-          notes: JSON.stringify(detail.หมายเหตุ || []),
-        })),
-      },
-      issuesDetails: {
-        create: (data.issuesDetails || []).map((issue: any) => ({
-          project: issue.project,
-          description: issue.description,
-          priority: issue.priority,
-        })),
-      },
-      codeReviews: {
-        create: (data.codeReview || []).map((review: any) => ({
-          project: review.project,
-          description: review.description,
-          priority: review.priority,
-        })),
-      },
-    },
-  });
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating meeting data:", error);
+    throw error;
+  }
+
+  const meetingId = meetingData.id;
+
+  // Insert projects
+  const allProjects = [
+    ...(data.projects.inProgress || []).map((name: string) => ({
+      name,
+      status: "inProgress",
+      meetingDataId: meetingId,
+    })),
+    ...(data.projects.completed || []).map((name: string) => ({
+      name,
+      status: "completed",
+      meetingDataId: meetingId,
+    })),
+    ...(data.projects.issues || []).map((name: string) => ({
+      name,
+      status: "issues",
+      meetingDataId: meetingId,
+    })),
+  ];
+
+  if (allProjects.length > 0) {
+    await supabase.from("Project").insert(allProjects);
+  }
+
+  // Insert project details
+  const projectDetails = (data.projectDetails || []).map((detail: any) => ({
+    orderNum: parseInt(detail.ลำดับ) || 0,
+    systemName: detail.ระบบงาน,
+    responsible: detail.ผู้รับผิดชอบ,
+    pm: detail.PM,
+    problems: JSON.stringify(detail.ปัญหาที่พบ || []),
+    solutions: JSON.stringify(detail.วิธีแก้ปัญหา || []),
+    notes: JSON.stringify(detail.หมายเหตุ || []),
+    meetingDataId: meetingId,
+  }));
+
+  if (projectDetails.length > 0) {
+    await supabase.from("ProjectDetail").insert(projectDetails);
+  }
+
+  // Insert issues
+  const issuesDetails = (data.issuesDetails || []).map((issue: any) => ({
+    project: issue.project,
+    description: issue.description,
+    priority: issue.priority,
+    meetingDataId: meetingId,
+  }));
+
+  if (issuesDetails.length > 0) {
+    await supabase.from("IssueDetail").insert(issuesDetails);
+  }
+
+  // Insert code reviews
+  const codeReviews = (data.codeReview || []).map((review: any) => ({
+    project: review.project,
+    description: review.description,
+    priority: review.priority,
+    meetingDataId: meetingId,
+  }));
+
+  if (codeReviews.length > 0) {
+    await supabase.from("CodeReview").insert(codeReviews);
+  }
 
   return meetingData;
 }
@@ -163,7 +229,7 @@ const app = new Elysia()
     status: "ok",
     timestamp: new Date().toISOString(),
   }))
-  .get("/api/meeting", async ({ set }: { set: any }) => {
+  .get("/api/meeting", async ({ set }) => {
     try {
       const data = await getMeetingData();
       if (!data) {
@@ -177,7 +243,7 @@ const app = new Elysia()
       return { error: "Failed to fetch meeting data" };
     }
   })
-  .post("/api/meeting", async ({ body, set }: { body: any; set: any }) => {
+  .post("/api/meeting", async ({ body, set }) => {
     try {
       await saveMeetingData(body);
       return { success: true, message: "Meeting data saved successfully" };
